@@ -232,6 +232,9 @@ if __name__ == "__main__":
 		testbed.shall_train = False
 		testbed.load_training_data(args.test_transforms)
 
+		folder_name = os.path.basename(args.scene).split('.')[0]
+		renders_path = os.path.join(os.path.dirname(args.save_snapshot), f"ingp_{folder_name}_renders")
+		os.makedirs(renders_path, exist_ok=True)
 		with tqdm(range(testbed.nerf.training.dataset.n_images), unit="images", desc=f"Rendering test frame") as t:
 			for i in t:
 				resolution = testbed.nerf.training.dataset.metadata[i].resolution
@@ -241,13 +244,15 @@ if __name__ == "__main__":
 				testbed.render_ground_truth = False
 				image = testbed.render(resolution[0], resolution[1], spp, True)
 
-				if i == 0:
-					write_image(f"ref.png", ref_image)
-					write_image(f"out.png", image)
+				subfolder = os.path.dirname(testbed.nerf.training.dataset.paths[i].split("images_ingp/")[-1])
+				out_name = os.path.basename(testbed.nerf.training.dataset.paths[i]).split('.')[0] + ".png"
+				os.makedirs(os.path.join(renders_path, subfolder) , exist_ok=True)
+				#write_image(os.path.join(renders_path, f"ref_{out_name}"), ref_image)
+				write_image(os.path.join(renders_path, subfolder, f"out_{out_name}"), image)
 
-					diffimg = np.absolute(image - ref_image)
-					diffimg[...,3:4] = 1.0
-					write_image("diff.png", diffimg)
+				#diffimg = np.absolute(image - ref_image)
+				#diffimg[...,3:4] = 1.0
+				#write_image("diff.png", diffimg)
 
 				A = np.clip(linear_to_srgb(image[...,:3]), 0.0, 1.0)
 				R = np.clip(linear_to_srgb(ref_image[...,:3]), 0.0, 1.0)
